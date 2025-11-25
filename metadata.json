@@ -1,0 +1,5 @@
+{
+  "name": "Nano Banana Pro 2 | Copy Images From Prompt",
+  "description": "A character consistency tool that adapts reference images to your specific characters using Gemini models.",
+  "requestFramePermissions": []
+}
