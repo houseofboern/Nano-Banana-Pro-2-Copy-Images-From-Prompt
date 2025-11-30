@@ -188,13 +188,13 @@ export const generateCharacterImage = async (
       config: {
         imageConfig: {
           aspectRatio: "1:1",
-          imageSize: "1K"
+          imageSize: "2K"
         }
       }
     });
 
-    // 110s timeout
-    const response = await withTimeout<GenerateContentResponse>(call, 110000, "Timeout waiting for Nano Banana Pro.");
+    // 180s timeout (3 minutes) to accommodate 2K generation
+    const response = await withTimeout<GenerateContentResponse>(call, 180000, "Timeout waiting for Nano Banana Pro.");
 
     // Iterate to find the image part
     if (response.candidates?.[0]?.content?.parts) {

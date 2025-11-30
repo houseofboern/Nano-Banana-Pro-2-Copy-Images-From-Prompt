@@ -1,22 +1,25 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Character } from '../types';
-import { Plus, X, Save, Upload, User, Loader2 } from 'lucide-react';
+import { Plus, X, Save, Upload, User, Loader2, Edit } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { resizeImage } from '../utils/image';
 
 interface CharacterFormProps {
+  initialData?: Character | null;
   onSave: (char: Character) => void;
   onCancel: () => void;
 }
 
-export const CharacterForm: React.FC<CharacterFormProps> = ({ onSave, onCancel }) => {
-  const [name, setName] = useState('');
-  const [hairColor, setHairColor] = useState('');
-  const [eyeColor, setEyeColor] = useState('');
-  const [skinColor, setSkinColor] = useState('');
-  const [avatar, setAvatar] = useState<string | null>(null);
+export const CharacterForm: React.FC<CharacterFormProps> = ({ initialData, onSave, onCancel }) => {
+  const [name, setName] = useState(initialData?.name || '');
+  const [hairColor, setHairColor] = useState(initialData?.hairColor || '');
+  const [eyeColor, setEyeColor] = useState(initialData?.eyeColor || '');
+  const [skinColor, setSkinColor] = useState(initialData?.skinColor || '');
+  const [avatar, setAvatar] = useState<string | null>(initialData?.avatarImage || null);
+  
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +32,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ onSave, onCancel }
     if (!cleanName || !cleanHair || !cleanEye || !cleanSkin) return;
 
     onSave({
-      id: uuidv4(),
+      id: initialData?.id || uuidv4(),
       name: cleanName,
       hairColor: cleanHair,
       eyeColor: cleanEye,
@@ -38,28 +41,41 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ onSave, onCancel }
     });
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const processFile = async (file: File) => {
+    try {
+      setIsProcessingImage(true);
+      const resizedBase64 = await resizeImage(file);
+      setAvatar(resizedBase64);
+    } catch (err) {
+      console.error("Failed to process image", err);
+      alert("Failed to process image. Please try another one.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      try {
-        setIsProcessingImage(true);
-        const resizedBase64 = await resizeImage(file);
-        setAvatar(resizedBase64);
-      } catch (err) {
-        console.error("Failed to process image", err);
-        alert("Failed to process image. Please try another one.");
-      } finally {
-        setIsProcessingImage(false);
-      }
+      processFile(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+        processFile(file);
     }
   };
 
   return (
-    <div className="bg-surface p-6 rounded-lg border border-gray-700 shadow-xl mb-6 max-h-[90vh] overflow-y-auto">
+    <div className="bg-surface p-6 rounded-lg border border-gray-700 shadow-xl mb-6 max-h-[90vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-4 duration-200">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-bold text-white flex items-center gap-2">
-          <Plus size={20} className="text-primary" />
-          New Character
+          {initialData ? <Edit size={20} className="text-primary" /> : <Plus size={20} className="text-primary" />}
+          {initialData ? 'Edit Character' : 'New Character'}
         </h3>
         <button onClick={onCancel} className="text-gray-400 hover:text-white">
           <X size={20} />
@@ -68,10 +84,19 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ onSave, onCancel }
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex justify-center mb-6">
-          <label className={`relative cursor-pointer group ${isProcessingImage ? 'pointer-events-none' : ''}`}>
+          <label 
+            className={`
+              relative cursor-pointer group 
+              ${isProcessingImage ? 'pointer-events-none' : ''}
+            `}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+          >
             <div className={`
-              w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden transition-colors
-              ${avatar ? 'border-primary' : 'border-gray-500 hover:border-gray-300'}
+              w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center overflow-hidden transition-all duration-200
+              ${isDragging ? 'border-primary bg-primary/20 scale-105' : ''}
+              ${avatar && !isDragging ? 'border-primary' : 'border-gray-500 hover:border-gray-300'}
             `}>
               {isProcessingImage ? (
                 <Loader2 className="animate-spin text-primary" size={24} />
@@ -88,7 +113,9 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ onSave, onCancel }
               )}
             </div>
             <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={isProcessingImage} />
-            <p className="text-xs text-center text-gray-400 mt-2">Upload Reference Photo</p>
+            <p className="text-xs text-center text-gray-400 mt-2">
+              {isDragging ? 'Drop Image' : 'Upload or Drop'}
+            </p>
           </label>
         </div>
 
@@ -147,7 +174,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ onSave, onCancel }
             className="bg-primary hover:bg-indigo-500 text-white px-6 py-2 rounded font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save size={18} />
-            Save Character
+            {initialData ? 'Update Character' : 'Save Character'}
           </button>
         </div>
       </form>

@@ -28,7 +28,10 @@ const App: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
-  const [isCreatingChar, setIsCreatingChar] = useState(false);
+  
+  // Character Modal State
+  const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
+  const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
   
   const [sourceImage, setSourceImage] = useState<string | null>(null);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
@@ -107,11 +110,34 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSaveCharacter = async (newChar: Character) => {
-    await db.saveCharacter(newChar);
-    setCharacters(prev => [...prev, newChar]);
-    setSelectedCharacterId(newChar.id);
-    setIsCreatingChar(false);
+  const handleOpenCreateModal = () => {
+    setEditingCharacter(null);
+    setIsCharacterModalOpen(true);
+  };
+
+  const handleOpenEditModal = (char: Character) => {
+    setEditingCharacter(char);
+    setIsCharacterModalOpen(true);
+  };
+
+  const handleSaveCharacter = async (charToSave: Character) => {
+    await db.saveCharacter(charToSave);
+    
+    setCharacters(prev => {
+      const exists = prev.some(c => c.id === charToSave.id);
+      if (exists) {
+        // Update existing
+        return prev.map(c => c.id === charToSave.id ? charToSave : c);
+      } else {
+        // Add new
+        return [...prev, charToSave];
+      }
+    });
+
+    // Select the character we just saved/edited
+    setSelectedCharacterId(charToSave.id);
+    setIsCharacterModalOpen(false);
+    setEditingCharacter(null);
   };
 
   const handleDeleteCharacter = async (id: string) => {
@@ -257,7 +283,7 @@ const App: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-200">Characters</h2>
             <button
-              onClick={() => setIsCreatingChar(true)}
+              onClick={handleOpenCreateModal}
               className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors"
               title="Add Character"
             >
@@ -265,10 +291,17 @@ const App: React.FC = () => {
             </button>
           </div>
 
-          {isCreatingChar && (
+          {isCharacterModalOpen && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
                 <div className="w-full max-w-md">
-                    <CharacterForm onSave={handleSaveCharacter} onCancel={() => setIsCreatingChar(false)} />
+                    <CharacterForm 
+                      initialData={editingCharacter}
+                      onSave={handleSaveCharacter} 
+                      onCancel={() => {
+                        setIsCharacterModalOpen(false);
+                        setEditingCharacter(null);
+                      }} 
+                    />
                 </div>
             </div>
           )}
@@ -277,6 +310,7 @@ const App: React.FC = () => {
             characters={characters}
             selectedId={selectedCharacterId}
             onSelect={setSelectedCharacterId}
+            onEdit={handleOpenEditModal}
             onDelete={handleDeleteCharacter}
           />
         </div>

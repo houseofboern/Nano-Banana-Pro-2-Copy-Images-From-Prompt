@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GeneratedImage, Character } from '../types';
-import { Download, Trash2, Clock, Loader2, AlertCircle, X } from 'lucide-react';
+import { Download, Trash2, Clock, Loader2, AlertCircle, X, Archive } from 'lucide-react';
+import JSZip from 'jszip';
 
 interface GalleryProps {
   images: GeneratedImage[];
@@ -11,8 +12,9 @@ interface GalleryProps {
 
 export const Gallery: React.FC<GalleryProps> = ({ images, characters, onClear, onDeleteOne }) => {
   const [previewImage, setPreviewImage] = useState<GeneratedImage | null>(null);
+  const [isZipping, setIsZipping] = useState(false);
   
-  const getCharacterName = (charId: string) => {
+  const getCharacterName = (charId: string): string => {
     return characters.find(c => c.id === charId)?.name || 'Unknown';
   };
 
@@ -25,6 +27,58 @@ export const Gallery: React.FC<GalleryProps> = ({ images, characters, onClear, o
     link.click();
     document.body.removeChild(link);
   };
+
+  const handleDownloadAll = async () => {
+    const completedImages = images.filter(img => img.status === 'completed' && img.imageData);
+    if (completedImages.length === 0) return;
+
+    try {
+      setIsZipping(true);
+      const zip = new JSZip();
+
+      // Group images by folder based on character name
+      completedImages.forEach((img) => {
+        const charName = getCharacterName(img.characterId).replace(/[^a-z0-9]/gi, '_'); // Sanitize
+        const fileName = `${charName}_${img.id.slice(0, 8)}.png`;
+        
+        // Add to zip in a folder named after the character
+        const folder = zip.folder(charName);
+        if (folder && img.imageData) {
+             folder.file(fileName, img.imageData, { base64: true });
+        }
+      });
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      
+      // Smart naming: if only one character is in the list, name the zip after them
+      const uniqueCharIds = [...new Set(completedImages.map(img => img.characterId))];
+      let zipName = 'personamorph_library.zip';
+      if (uniqueCharIds.length === 1) {
+          const firstId = uniqueCharIds[0];
+          // Ensure firstId is a string (handle array access possibly returning undefined)
+          if (typeof firstId === 'string') {
+              const charName = getCharacterName(firstId).replace(/[^a-z0-9]/gi, '_');
+              zipName = `${charName}_images.zip`;
+          }
+      }
+
+      // Create download link
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content as Blob);
+      link.download = zipName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      console.error("Failed to zip images", error);
+      alert("Failed to create zip file.");
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
+  const hasCompletedImages = images.some(img => img.status === 'completed');
 
   if (images.length === 0) {
     return (
@@ -42,12 +96,26 @@ export const Gallery: React.FC<GalleryProps> = ({ images, characters, onClear, o
             <Clock size={24} className="text-primary" />
             Queue & Library
           </h2>
-          <button
-            onClick={onClear}
-            className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1 px-3 py-1 rounded hover:bg-red-900/20 transition-colors"
-          >
-            <Trash2 size={14} /> Clear All
-          </button>
+          
+          <div className="flex gap-3">
+            {hasCompletedImages && (
+              <button
+                onClick={handleDownloadAll}
+                disabled={isZipping}
+                className="bg-primary hover:bg-indigo-500 text-white text-sm font-bold flex items-center gap-2 px-5 py-2.5 rounded shadow-lg shadow-primary/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none"
+              >
+                {isZipping ? <Loader2 size={18} className="animate-spin" /> : <Archive size={18} />}
+                Download All
+              </button>
+            )}
+            
+            <button
+              onClick={onClear}
+              className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1 px-3 py-2 rounded hover:bg-red-900/20 transition-colors"
+            >
+              <Trash2 size={14} /> Clear All
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
