@@ -13,7 +13,12 @@ interface CharacterFormProps {
 
 export const CharacterForm: React.FC<CharacterFormProps> = ({ initialData, onSave, onCancel }) => {
   const [name, setName] = useState(initialData?.name || '');
+  
+  // Hair traits
   const [hairColor, setHairColor] = useState(initialData?.hairColor || '');
+  const [hairLength, setHairLength] = useState(initialData?.hairLength || '');
+  const [hairTexture, setHairTexture] = useState(initialData?.hairTexture || '');
+  
   const [eyeColor, setEyeColor] = useState(initialData?.eyeColor || '');
   const [skinColor, setSkinColor] = useState(initialData?.skinColor || '');
   const [avatar, setAvatar] = useState<string | null>(initialData?.avatarImage || null);
@@ -26,6 +31,8 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ initialData, onSav
     
     const cleanName = name.trim();
     const cleanHair = hairColor.trim();
+    const cleanHairLength = hairLength.trim();
+    const cleanHairTexture = hairTexture.trim();
     const cleanEye = eyeColor.trim();
     const cleanSkin = skinColor.trim();
 
@@ -35,6 +42,8 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ initialData, onSav
       id: initialData?.id || uuidv4(),
       name: cleanName,
       hairColor: cleanHair,
+      hairLength: cleanHairLength || "Medium", // Default if missing from old data
+      hairTexture: cleanHairTexture || "Straight", // Default if missing from old data
       eyeColor: cleanEye,
       skinColor: cleanSkin,
       avatarImage: avatar || undefined
@@ -131,7 +140,11 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ initialData, onSav
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-1">Hair Details</h4>
+          </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Hair Color</label>
             <input
@@ -143,6 +156,36 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({ initialData, onSav
               required
             />
           </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Length</label>
+                <input
+                type="text"
+                value={hairLength}
+                onChange={(e) => setHairLength(e.target.value)}
+                className="w-full bg-background border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-primary"
+                placeholder="e.g. Long"
+                required
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Texture</label>
+                <input
+                type="text"
+                value={hairTexture}
+                onChange={(e) => setHairTexture(e.target.value)}
+                className="w-full bg-background border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-primary"
+                placeholder="e.g. Wavy"
+                required
+                />
+            </div>
+          </div>
+          
+          <div className="md:col-span-2">
+             <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-2">Other Features</h4>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Eye Color</label>
             <input

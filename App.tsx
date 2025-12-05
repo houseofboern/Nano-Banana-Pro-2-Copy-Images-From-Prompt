@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
   
   const [sourceImage, setSourceImage] = useState<string | null>(null);
+  const [isSourceSent, setIsSourceSent] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
 
   // State for Clear Confirmation Dialog
@@ -88,6 +89,7 @@ const App: React.FC = () => {
               // Resize pasted image immediately
               const resized = await resizeImage(file);
               setSourceImage(resized);
+              setIsSourceSent(false); // Reset sent state on new paste
             } catch (err) {
               console.error("Failed to process pasted image", err);
             }
@@ -155,6 +157,8 @@ const App: React.FC = () => {
     
     const character = characters.find(c => c.id === selectedCharacterId);
     if (!character) return;
+
+    setIsSourceSent(true); // Mark as sent to show visual feedback
 
     // Create a new job entry
     const newJobId = uuidv4();
@@ -323,8 +327,12 @@ const App: React.FC = () => {
                  {/* SOURCE INPUT */}
                  <div className="h-[400px]">
                      <ImageUploader 
-                        onImageSelect={setSourceImage} 
+                        onImageSelect={(val) => {
+                          setSourceImage(val);
+                          setIsSourceSent(false); // Reset sent overlay on new image select
+                        }} 
                         selectedImage={sourceImage} 
+                        isSent={isSourceSent}
                       />
                  </div>
 

@@ -1,7 +1,10 @@
+
 export interface Character {
   id: string;
   name: string;
   hairColor: string;
+  hairLength: string; // e.g. "Long", "Short", "Shoulder-length"
+  hairTexture: string; // e.g. "Straight", "Curly", "Wavy"
   eyeColor: string;
   skinColor: string;
   avatarImage?: string; // Base64 reference image for the character

@@ -48,7 +48,7 @@ export const CharacterList: React.FC<CharacterListProps> = ({ characters, select
             <div className="min-w-0">
               <h4 className="font-medium text-white truncate">{char.name}</h4>
               <p className="text-xs text-gray-400 truncate">
-                {char.hairColor} • {char.eyeColor}
+                {char.hairLength || ''} {char.hairTexture || ''} {char.hairColor} • {char.eyeColor}
               </p>
             </div>
           </div>

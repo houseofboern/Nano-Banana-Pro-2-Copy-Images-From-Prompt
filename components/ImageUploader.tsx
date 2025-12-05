@@ -6,9 +6,10 @@ import { resizeImage } from '../utils/image';
 interface ImageUploaderProps {
   onImageSelect: (base64: string | null) => void;
   selectedImage: string | null;
+  isSent?: boolean;
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect, selectedImage }) => {
+export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect, selectedImage, isSent = false }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -64,7 +65,19 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect, sel
             alt="Source" 
             className="max-w-full max-h-[400px] object-contain" 
           />
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+          
+          {/* Sent Overlay */}
+          {isSent && (
+            <div className="absolute inset-0 bg-green-900/60 flex items-center justify-center z-10 pointer-events-none animate-in fade-in duration-300">
+               <div className="border-4 border-green-500 rounded-xl p-4 -rotate-12 bg-green-800/80 shadow-2xl backdrop-blur-sm">
+                  <span className="text-green-100 font-black text-6xl tracking-widest uppercase drop-shadow-md">
+                    SENT
+                  </span>
+               </div>
+            </div>
+          )}
+
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 z-20">
             <span className="text-white font-bold bg-black/60 px-4 py-2 rounded-full border border-white/20 backdrop-blur-sm">
               Click to Remove
             </span>
